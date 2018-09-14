@@ -7,25 +7,29 @@ export class MergeEventIntervals {
 	}
 
 	isIntersection(a, b) {
-		if (a.start.isSameOrBefore(b.start)) {
-			return a.end.isSameOrAfter(b.start);
+		if (a.start.isBefore(b.start)) {
+			return a.end.isAfter(b.start);
 		}
-		return b.end.isSameOrAfter(a.start);
+		return b.end.isAfter(a.start);
 	}
 
 	union(items) {
 		const stack = [];
-		items = this.sort(items);
+		items = this.sort(items).filter(item => !item.start.isSame(item.end));
 
 		stack.push(items[0]);
 
 		items.slice(1).forEach(item => {
 			const top = stack[stack.length - 1];
 
-			if (top.end.isBefore(item.start)) {
+			if (top.zIndex === item.zIndex) {
+				if (top.end.isBefore(item.start)) {
+					stack.push(item);
+				} else if(top.end.isSameOrBefore(item.end)) {
+					top.end = item.end;	
+				}
+			} else {
 				stack.push(item);
-			} else if(top.end.isBefore(item.end)) {
-				top.end = item.end;	
 			}
 		});
 
@@ -46,80 +50,21 @@ export class MergeEventIntervals {
 		// -------
 		//      -------
 		if (a.end.isSameOrAfter(b.start) && a.end.isBefore(b.end)) {
-			if (a.zIndex === b.zIndex) {
-				return [
-					{start: a.start, end: b.end, zIndex: a.zIndex}
-				]
-			}
-
-			// -------
-			//        -------
-			if (a.end.isSame(b.start)) {
-				return [a, b];
-			}
-
-			// -------
-			// ----------
-			if (a.start.isSame(b.start)) {
-				return [
-					{start: a.start, end: a.end, zIndex: a.zIndex > b.zIndex ? a.zIndex : b.zIndex},
-					{start: a.end, end: b.end, zIndex: b.zIndex}
-				]
-			}
-
-			// -------
-			//      -------
-			if (a.zIndex > b.zIndex) {
-				return [
-					a,
-					{start: a.end, end: b.end, zIndex: b.zIndex}
-				]
-			}
-
-			return [
+			return this.union([
 				{start: a.start, end: b.start, zIndex: a.zIndex},
-				b
-			]
+				{start: b.start, end: a.end, zIndex: a.zIndex > b.zIndex ? a.zIndex : b.zIndex},
+				{start: a.end, end: b.end, zIndex: b.zIndex}
+			]);
 		}
 
 		// ----------
 		//   -----
 		if (a.end.isSameOrAfter(b.end)) {
-			if (a.zIndex >= b.zIndex) {
-				return [a];
-			}
-
-			// -----
-			// -----
-			if (a.start.isSame(b.start) && a.end.isSame(b.end)) {
-				return [b];
-			}
-
-			// ----------
-			// -----
-			if (a.start.isSame(b.start)) {
-				return [
-					{start: a.start, end: b.end, zIndex: b.zIndex},
-					{start: b.end, end: a.end, zIndex: a.zIndex}
-				]
-			}
-
-			// ----------
-			//      -----
-			if (a.end.isSame(b.end)) {
-				return [
-					{start: a.start, end: b.start, zIndex: a.zIndex},
-					{start: b.start, end: b.end, zIndex: b.zIndex}
-				]
-			}
-
-			// ----------
-			//    -----
-			return [
+			return this.union([
 				{start: a.start, end: b.start, zIndex: a.zIndex},
-				{start: b.start, end: b.end, zIndex: b.zIndex},
+				{start: b.start, end: b.end, zIndex: a.zIndex > b.zIndex ? a.zIndex : b.zIndex},
 				{start: b.end, end: a.end, zIndex: a.zIndex}
-			]
+			]);
 		}
 
 		return [];
@@ -130,9 +75,9 @@ export class MergeEventIntervals {
 			return [];
 		}
 
-		const events = [];
 		items = this.sort(items);
 
+		const events = [];
 		events.push(items.shift());
 
 		while (items.length) {
@@ -154,71 +99,4 @@ export class MergeEventIntervals {
 
 		return events;
 	}
-
-	// merge() {
-	// 	const events = [];
-	//
-	// 	const mapByZIndex = this._items.reduce((item, map) => {
-	// 		map[item.zIndex] = map[item.zIndex] || [];
-	// 		map[item.zIndex].push(item);
-	// 		return map;
-	// 	}, {});
-	//
-	// 	for(let items of mapByZIndex) {
-	// 		items = this.union(items);
-	// 	}
-	//
-	// 	const eventsByZIndex = Object.keys(mapByZIndex).sort().map(zIndex => mapByZIndex[zIndex]);
-	//
-	// 	events.push(eventsByZIndex[0]);
-	//
-	// 	eventsByZIndex.slice(1).forEach(items => {
-	// 		items.forEach(event => {
-	// 			const intersectionEvents = events.filter(item => this.isIntersection(event, item));
-	// 			const mergeEvents = intersectionEvents.reduce()
-	//
-	//
-	//
-	// 		})
-	// 	})
-	//
-	//
-	//
-	//
-	//
-	//
-	// 	return []
-	// }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
