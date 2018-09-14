@@ -97,6 +97,6 @@ export class MergeEventIntervals {
 			}
 		}
 
-		return events;
+		return this.union(events);
 	}
 }

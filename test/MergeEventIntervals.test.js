@@ -208,6 +208,10 @@ describe('MergeEventIntervals', () => {
 		items = [i(0, 30, zIndex0), i(10, 20, zIndex0)];
 		mergeItems = [i(0, 30, zIndex0)];
 		expect(events.merge(items)).to.eql(mergeItems);
+		
+		items = [i(0, 10, zIndex0), i(10, 20, zIndex0)];
+		mergeItems = [i(0, 20, zIndex0)];
+		expect(events.merge(items)).to.eql(mergeItems);
 
 		items = [i(0, 30, zIndex0), i(10, 20, zIndex1)];
 		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
@@ -221,9 +225,12 @@ describe('MergeEventIntervals', () => {
 		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
 		expect(events.merge(items)).to.eql(mergeItems);
 
+		items = [i(0, 60, zIndex0), i(10, 40, zIndex1), i(30, 50, zIndex2)];
+		mergeItems = [i(0, 10, zIndex0), i(10, 30, zIndex1), i(30, 50, zIndex2), i(50, 60, zIndex0)];
+		expect(events.merge(items)).to.eql(mergeItems);
+
 		items = [i(0, 60, zIndex0), i(10, 20, zIndex1), i(30, 50, zIndex1), i(35, 45, zIndex2)];
 		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0), i(30, 35, zIndex1), i(35, 45, zIndex2), i(45, 50, zIndex1), i(50, 60, zIndex0)];
 		expect(events.merge(items)).to.eql(mergeItems);
 	})
-
 })
