@@ -51,9 +51,9 @@ export class MergeEventIntervals {
 		//      -------
 		if (a.end.isSameOrAfter(b.start) && a.end.isBefore(b.end)) {
 			return this.union([
-				{start: a.start, end: b.start, zIndex: a.zIndex},
-				{start: b.start, end: a.end, zIndex: a.zIndex > b.zIndex ? a.zIndex : b.zIndex},
-				{start: a.end, end: b.end, zIndex: b.zIndex}
+				Object.assign({}, a, {end: b.start}),
+                Object.assign({}, a.zIndex > b.zIndex ? a : b, {start: b.start, end: a.end}),
+                Object.assign({}, b, {start: a.end})
 			]);
 		}
 
@@ -61,9 +61,9 @@ export class MergeEventIntervals {
 		//   -----
 		if (a.end.isSameOrAfter(b.end)) {
 			return this.union([
-				{start: a.start, end: b.start, zIndex: a.zIndex},
-				{start: b.start, end: b.end, zIndex: a.zIndex > b.zIndex ? a.zIndex : b.zIndex},
-				{start: b.end, end: a.end, zIndex: a.zIndex}
+                Object.assign({}, a, {end: b.start}),
+                Object.assign({}, a.zIndex > b.zIndex ? a : b, {start: b.start, end: b.end}),
+                Object.assign({}, a, {start: b.end})
 			]);
 		}
 
