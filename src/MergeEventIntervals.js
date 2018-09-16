@@ -1,4 +1,4 @@
-import moment from  'moment';
+import moment from 'moment';
 
 export class MergeEventIntervals {
 
@@ -25,8 +25,8 @@ export class MergeEventIntervals {
 			if (top.zIndex === item.zIndex) {
 				if (top.end.isBefore(item.start)) {
 					stack.push(item);
-				} else if(top.end.isSameOrBefore(item.end)) {
-					top.end = item.end;	
+				} else if (top.end.isSameOrBefore(item.end)) {
+					top.end = item.end;
 				}
 			} else {
 				stack.push(item);
@@ -52,8 +52,8 @@ export class MergeEventIntervals {
 		if (a.end.isSameOrAfter(b.start) && a.end.isBefore(b.end)) {
 			return this.union([
 				Object.assign({}, a, {end: b.start}),
-                Object.assign({}, a.zIndex > b.zIndex ? a : b, {start: b.start, end: a.end}),
-                Object.assign({}, b, {start: a.end})
+				Object.assign({}, a.zIndex > b.zIndex ? a : b, {start: b.start, end: a.end}),
+				Object.assign({}, b, {start: a.end})
 			]);
 		}
 
@@ -61,9 +61,9 @@ export class MergeEventIntervals {
 		//   -----
 		if (a.end.isSameOrAfter(b.end)) {
 			return this.union([
-                Object.assign({}, a, {end: b.start}),
-                Object.assign({}, a.zIndex > b.zIndex ? a : b, {start: b.start, end: b.end}),
-                Object.assign({}, a, {start: b.end})
+				Object.assign({}, a, {end: b.start}),
+				Object.assign({}, a.zIndex > b.zIndex ? a : b, {start: b.start, end: b.end}),
+				Object.assign({}, a, {start: b.end})
 			]);
 		}
 
