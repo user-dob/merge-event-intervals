@@ -36,9 +36,36 @@ export class MergeEventIntervals {
 		return stack;
 	}
 
+	unionWithBorders(items) {
+		const stack = [];
+		items = this.sort(items).filter(item => !item.start.isSame(item.end));
+
+		stack.push(items[0]);
+
+		items.slice(1).forEach(item => {
+			const top = stack[stack.length - 1];
+
+			if (top.zIndex === item.zIndex) {
+				if (top.end.isSameOrBefore(item.start)) {
+					stack.push(item);
+				} else if (top.end.isBefore(item.end)) {
+					top.end = item.end;
+				}
+			} else {
+				stack.push(item);
+			}
+		});
+
+		return stack;
+	}
+
 	mergeTwoEvents(a, b) {
 		if (a.start.isAfter(b.start)) {
 			[a, b] = [b, a];
+		}
+
+		if (a.zIndex === b.zIndex) {
+			return this.unionWithBorders([a, b]);
 		}
 
 		// -----
@@ -97,6 +124,6 @@ export class MergeEventIntervals {
 			}
 		}
 
-		return this.union(events);
+		return events;
 	}
 }

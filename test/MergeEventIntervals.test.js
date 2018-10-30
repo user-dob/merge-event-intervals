@@ -15,171 +15,200 @@ const i = (() => {
 	return (start, end, zIndex = 0) => ({start: n(start), end: n(end), zIndex});
 })();
 
+const expectIntervals = (left, right, message) => {
+	const leftValue = left.map(item => [item.start.minute(), item.end.minute(), item.zIndex]);
+	const rightValue = right.map(item => [item.start.minute(), item.end.minute(), item.zIndex]);
+
+	expect(leftValue).to.eql(rightValue, message || `[(${leftValue.join('),(')})] !== [(${rightValue.join('),(')})]`);
+}
+
 describe('MergeEventIntervals', () => {
 
+	let mergeEventIntervals;
+
+	beforeEach(() => {
+		mergeEventIntervals = new MergeEventIntervals();
+	})
+
 	it('sort', () => {
-		const events = new MergeEventIntervals();
-		let items, sortItems;
+		let items, expectItems;
 
-		items = [i(0, 10), i(20, 30)]
-		sortItems = events.sort(items);
+		items = [i(0, 10), i(20, 30)];
+		expectItems = [i(0, 10), i(20, 30)];
+		expectIntervals(expectItems, mergeEventIntervals.sort(items));
 
-		expect(sortItems[0]).to.eql(items[0]);
-		expect(sortItems[1]).to.eql(items[1]);
-
-		items = [i(20, 30), i(0, 10)]
-		sortItems = events.sort(items);
-
-		expect(sortItems[0]).to.eql(items[1]);
-		expect(sortItems[1]).to.eql(items[0]);
+		items = [i(20, 30), i(0, 10)];
+		expectItems = [i(0, 10), i(20, 30)];
+		expectIntervals(expectItems, mergeEventIntervals.sort(items));
 	})
 
 	it('isIntersection', () => {
-		const events = new MergeEventIntervals();
 		let isIntersection;
 
-		isIntersection = events.isIntersection(i(0, 1), i(2, 3));
+		isIntersection = mergeEventIntervals.isIntersection(i(0, 1), i(2, 3));
 		expect(isIntersection).to.be.false;
 
-		isIntersection = events.isIntersection(i(20, 30), i(0, 10));
+		isIntersection = mergeEventIntervals.isIntersection(i(20, 30), i(0, 10));
 		expect(isIntersection).to.be.false;
 
-		isIntersection = events.isIntersection(i(0, 10), i(5, 15));
+		isIntersection = mergeEventIntervals.isIntersection(i(0, 10), i(5, 15));
 		expect(isIntersection).to.be.true;
 
-		isIntersection = events.isIntersection(i(0, 10), i(10, 15));
+		isIntersection = mergeEventIntervals.isIntersection(i(0, 10), i(10, 15));
 		expect(isIntersection).to.be.false;
 
-		isIntersection = events.isIntersection(i(0, 10), i(2, 5));
+		isIntersection = mergeEventIntervals.isIntersection(i(0, 10), i(2, 5));
 		expect(isIntersection).to.be.true;
+	})
+
+	it('unionWithBorders', () => {
+		let items, expectItems;
+
+		items = [i(0, 10)];
+		expectItems = [i(0, 10)];
+		expectIntervals(expectItems, mergeEventIntervals.unionWithBorders(items));
+
+		items = [i(0, 10), i(5, 10)];
+		expectItems = [i(0, 10)];
+		expectIntervals(expectItems, mergeEventIntervals.unionWithBorders(items));
+
+		items = [i(0, 10), i(5, 20)];
+		expectItems = [i(0, 20)];
+		expectIntervals(expectItems, mergeEventIntervals.unionWithBorders(items));
+
+		items = [i(0, 10), i(20, 40)];
+		expectItems = [i(0, 10), i(20, 40)];
+		expectIntervals(expectItems, mergeEventIntervals.unionWithBorders(items));
+
+		items = [i(0, 10), i(10, 20)];
+		expectItems = [i(0, 10), i(10, 20)];
+		expectIntervals(expectItems, mergeEventIntervals.unionWithBorders(items));
 	})
 
 	it('union', () => {
-		const events = new MergeEventIntervals();
-		let items, unionItems;
+		let items, expectItems;
 
 		items = [i(0, 10)];
-		unionItems = [i(0, 10)];
-		expect(events.union(items)).to.eql(unionItems);
+		expectItems = [i(0, 10)];
+		expectIntervals(expectItems, mergeEventIntervals.union(items));
 
 		items = [i(0, 10), i(5, 10)];
-		unionItems = [i(0, 10)];
-		expect(events.union(items)).to.eql(unionItems);
+		expectItems = [i(0, 10)];
+		expectIntervals(expectItems, mergeEventIntervals.union(items));
 
 		items = [i(0, 10), i(5, 20)];
-		unionItems = [i(0, 20)];
-		expect(events.union(items)).to.eql(unionItems);
+		expectItems = [i(0, 20)];
+		expectIntervals(expectItems, mergeEventIntervals.union(items));
 
 		items = [i(0, 10), i(20, 40)];
-		unionItems = [i(0, 10), i(20, 40)];
-		expect(events.union(items)).to.eql(unionItems);
+		expectItems = [i(0, 10), i(20, 40)];
+		expectIntervals(expectItems, mergeEventIntervals.union(items));
 
 		items = [i(0, 10), i(10, 20)];
-		unionItems = [i(0, 20)];
-		expect(events.union(items)).to.eql(unionItems);
+		expectItems = [i(0, 20)];
+		expectIntervals(expectItems, mergeEventIntervals.union(items));
 	})
 
 	it('mergeTwoEvents', () => {
-		const events = new MergeEventIntervals();
 		const zIndex0 = 0;
 		const zIndex1 = 1;
-		let items, mergeItems;
+		let items, expectItems;
 
 		// -----
 		//        -----
 		items = [i(0, 10, zIndex0), i(20, 30, zIndex0)];
-		mergeItems = [i(0, 10, zIndex0), i(20, 30, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 10, zIndex0), i(20, 30, zIndex0)]');
+		expectItems = [i(0, 10, zIndex0), i(20, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		// -----
 		//      -----
 		items = [i(0, 10, zIndex0), i(10, 20, zIndex0)];
-		mergeItems = [i(0, 20, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 10, zIndex0), i(10, 20, zIndex0)]');
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(10, 20, zIndex0), i(0, 10, zIndex0)];
-		mergeItems = [i(0, 20, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(10, 20, zIndex0), i(0, 10, zIndex0)]');
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 10, zIndex0), i(10, 20, zIndex1)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 10, zIndex0), i(10, 20, zIndex1)]');
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex1)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		// -------
 		// ----------
 		items = [i(0, 10, zIndex0), i(0, 20, zIndex0)];
-		mergeItems = [i(0, 20, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 10, zIndex0), i(0, 20, zIndex0)]');
+		expectItems = [i(0, 20, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 10, zIndex1), i(0, 20, zIndex0)];
-		mergeItems = [i(0, 10, zIndex1), i(10, 20, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 10, zIndex1), i(0, 20, zIndex0)]');
+		expectItems = [i(0, 10, zIndex1), i(10, 20, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		// -------
 		//      -------
 		items = [i(0, 20, zIndex0), i(10, 30, zIndex0)];
-		mergeItems = [i(0, 30, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex0), i(10, 30, zIndex0)]');
+		expectItems = [i(0, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 20, zIndex1), i(10, 30, zIndex0)];
-		mergeItems = [i(0, 20, zIndex1), i(20, 30, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex1), i(10, 30, zIndex0)]');
+		expectItems = [i(0, 20, zIndex1), i(20, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 20, zIndex0), i(10, 30, zIndex1)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 30, zIndex1)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex0), i(10, 30, zIndex1)]');
+		expectItems = [i(0, 10, zIndex0), i(10, 30, zIndex1)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		// -------
 		// -------
 		items = [i(0, 10, zIndex0), i(0, 10, zIndex0)];
-		mergeItems = [i(0, 10, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 10, zIndex0), i(0, 10, zIndex0)]');
+		expectItems = [i(0, 10, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 10, zIndex1), i(0, 10, zIndex0)];
-		mergeItems = [i(0, 10, zIndex1)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 10, zIndex1), i(0, 10, zIndex0)]');
+		expectItems = [i(0, 10, zIndex1)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		// ----------
 		// -----
 		items = [i(0, 20, zIndex0), i(0, 10, zIndex0)];
-		mergeItems = [i(0, 20, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex0), i(0, 10, zIndex0)]');
+		expectItems = [i(0, 20, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 20, zIndex1), i(0, 10, zIndex0)];
-		mergeItems = [i(0, 20, zIndex1)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex1), i(0, 10, zIndex0)]');
+		expectItems = [i(0, 20, zIndex1)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 20, zIndex0), i(0, 10, zIndex1)];
-		mergeItems = [i(0, 10, zIndex1), i(10, 20, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex0), i(0, 10, zIndex1)]');
+		expectItems = [i(0, 10, zIndex1), i(10, 20, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		// ----------
 		//      -----
 		items = [i(0, 20, zIndex0), i(10, 20, zIndex0)];
-		mergeItems = [i(0, 20, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex0), i(10, 20, zIndex0)]');
+		expectItems = [i(0, 20, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 20, zIndex1), i(10, 20, zIndex0)];
-		mergeItems = [i(0, 20, zIndex1)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex1), i(10, 20, zIndex0)]');
+		expectItems = [i(0, 20, zIndex1)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 20, zIndex0), i(10, 20, zIndex1)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 20, zIndex0), i(10, 20, zIndex1)]');
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex1)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		// ----------
 		//    -----
 		items = [i(0, 30, zIndex0), i(10, 20, zIndex0)];
-		mergeItems = [i(0, 30, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 30, zIndex0), i(10, 20, zIndex0)]');
+		expectItems = [i(0, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 30, zIndex1), i(10, 20, zIndex0)];
-		mergeItems = [i(0, 30, zIndex1)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 30, zIndex1), i(10, 20, zIndex0)]');
+		expectItems = [i(0, 30, zIndex1)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 
 		items = [i(0, 30, zIndex0), i(10, 20, zIndex1)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
-		expect(events.mergeTwoEvents(items[0], items[1])).to.eql(mergeItems, '[i(0, 30, zIndex0), i(10, 20, zIndex1)]');
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.mergeTwoEvents(...items));
 	})
 
 	it('merge', () => {
@@ -187,50 +216,50 @@ describe('MergeEventIntervals', () => {
 		const zIndex0 = 0;
 		const zIndex1 = 1;
 		const zIndex2 = 2;
-		let items, mergeItems;
+		let items, expectItems;
 
 		items = [];
-		mergeItems = [];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 10, zIndex0)];
-		mergeItems = [i(0, 10, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 10, zIndex0), i(20, 30, zIndex0)];
-		mergeItems = [i(0, 10, zIndex0), i(20, 30, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0), i(20, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 10, zIndex0), i(20, 30, zIndex1)];
-		mergeItems = [i(0, 10, zIndex0), i(20, 30, zIndex1)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0), i(20, 30, zIndex1)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 30, zIndex0), i(10, 20, zIndex0)];
-		mergeItems = [i(0, 30, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 10, zIndex0), i(10, 20, zIndex0)];
-		mergeItems = [i(0, 20, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 30, zIndex0), i(10, 20, zIndex1)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 30, zIndex0), i(10, 20, zIndex1)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 30, zIndex0), i(10, 20, zIndex1), i(10, 15, zIndex0)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 60, zIndex0), i(10, 40, zIndex1), i(30, 50, zIndex2)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 30, zIndex1), i(30, 50, zIndex2), i(50, 60, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0), i(10, 30, zIndex1), i(30, 50, zIndex2), i(50, 60, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 
 		items = [i(0, 60, zIndex0), i(10, 20, zIndex1), i(30, 50, zIndex1), i(35, 45, zIndex2)];
-		mergeItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0), i(30, 35, zIndex1), i(35, 45, zIndex2), i(45, 50, zIndex1), i(50, 60, zIndex0)];
-		expect(events.merge(items)).to.eql(mergeItems);
+		expectItems = [i(0, 10, zIndex0), i(10, 20, zIndex1), i(20, 30, zIndex0), i(30, 35, zIndex1), i(35, 45, zIndex2), i(45, 50, zIndex1), i(50, 60, zIndex0)];
+		expectIntervals(expectItems, mergeEventIntervals.merge(items));
 	})
 })
